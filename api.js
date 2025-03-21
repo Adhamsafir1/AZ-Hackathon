@@ -1,7 +1,7 @@
 const STORAGE_KEY = `chatMessages_${window.location.hostname}`;
 const EXPIRATION_DAYS = 3;
 window.API_CONFIG = {
-    apiKey: "AIzaSyAyCWYtZU0mqJW3fCUPj_FeTR_g2-xZsbo",
+    apiKey: "Enter_Your_Secrect_apiKey",
     apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 };
 let resumeData = "";
