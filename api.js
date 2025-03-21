@@ -30,17 +30,19 @@ window.analyzePageContent = async function analyzePageContent(userMessage, pageC
     User Request: ${userMessage} Resume Data: ${resumeData} Job Posting Content: ${pageContent} 
     Previous Chat Data: ${previousChatData}` ;
     if (userMessage.toLowerCase() === "test") {
-        promptText = `Analyze the following webpage content and check if it contains job postings or internship opportunities. 
-        If job-related content is found, extract and summarize the job or internship details in a structured format.
-        If no job-related content is found, return: { "message": "This site does not contain job or internship information." }.
+        promptText = `
+        strictly fllow this :If no job or intern application   is found,striclty  return: this only with out any addtional information{ "message": "This site does not contain job or internship information." }.return this dont check any other than this.or dont return an other than this
+        Analyze the following webpage content and check if it contains job postings or internship opportunities. 
+        If job or intern application is found, extract and summarize the job or internship details in a structured format.
+        If no job or intern application is found, return: { "message": "This site does not contain job or internship information." }.
         Do not use any content styling (e.g., bold, italic), only structured JSON output.
-        if it is as job related page  Give response only for job related site other wise dont give any response.
-        if a resume is provided and it is a job related page then , assess its alignment with any job descriptions found, provide a resumescore (0-100),
+        if it is as job or intern application page  Give response only for job or intern application site other wise dont give any response.
+        if a resume is provided and it is a job or intern application page then , assess its alignment with any job descriptions found, provide a resumescore (0-100),
         
                     and offer actionable suggestions for improvement my resume in points numbered to 1-n.
                     
                     Analyze the provided resume and evaluate its relevance to job postings or internship opportunities.  
-
+                    
 
                     Additionally,   
 
@@ -75,18 +77,19 @@ window.analyzePageContent = async function analyzePageContent(userMessage, pageC
                 aiResponse = aiResponse.replace(/^```json|```$/g, "").trim();
             }
 
-            // 🔹 Ensure it's valid JSON before parsing
-            if (aiResponse.startsWith("{") || aiResponse.startsWith("[")) {
-                try {
-                    return JSON.parse(aiResponse); // Convert string to JSON
-                } catch (parseError) {
-                    console.error("Error parsing AI response as JSON:", parseError);
-                    return { message: "AI response is not valid JSON." };
-                }
-            } else {
-                console.warn("AI response is not in JSON format:", aiResponse);
-                return { message: aiResponse }; // Return as plain text
+            if (aiResponse.startsWith("```json")) {
+                aiResponse = aiResponse.replace(/^```json\s*|```$/g, "").trim();
             }
+            
+            // Ensure the AI response is valid JSON before parsing
+            try {
+                console.log("Raw AI Response:", aiResponse);  // Debugging log
+                return JSON.parse(aiResponse);
+            } catch (parseError) {
+                console.error("Error parsing AI response as JSON:", parseError, "Response:", aiResponse);
+                return { message: "AI response is not valid JSON.", rawResponse: aiResponse };
+            }
+            
         } else {
             return { "message": "This site does not contain job or internship information." };
         }

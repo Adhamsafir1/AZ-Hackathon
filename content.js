@@ -1,14 +1,40 @@
 // Configuration
 window.CONFIG = {
   button: {
-    size: "50px", // Fetch from localStorage or use default
-    color: localStorage.getItem("buttonColor") || "#4285F4", // Fetch from localStorage or use default
-    position: localStorage.getItem("buttonPosition") || "right" // Fetch from localStorage or use default
+    size: "40px", // Default value
+    color: "#64b5f6", // Default color if no value is stored
+    position: "right" // Default position if no value is stored
   },
   panel: {
-    width:"300px" // Fetch from localStorage or use default
+    width: "300px" // Default width
   }
 };
+
+// Fetch settings from Chrome storage
+chrome.storage.local.get(["buttonColor", "buttonPosition"], (result) => {
+  if (result.buttonColor) {
+    window.CONFIG.button.color = result.buttonColor;
+  }
+  if (result.buttonPosition) {
+    window.CONFIG.button.position = result.buttonPosition;
+  }
+
+  // Apply styles AFTER ensuring storage values are loaded
+  const sidebarButton = document.getElementById("page-assistant-button");
+  if (sidebarButton) {
+
+    sidebarButton.style.backgroundColor = window.CONFIG.button.color;
+    if (window.CONFIG.button.position === "left") {
+      sidebarButton.style.left = "20px";
+      sidebarButton.style.right = "";
+    } else {
+      sidebarButton.style.right = "20px";
+      sidebarButton.style.left = "";
+    }
+  }
+});
+
+
 
 // Create and inject the floating button
 function createFloatingButton() {
@@ -51,7 +77,8 @@ function createFloatingButton() {
   button.addEventListener("mouseout", () => {
     button.style.transform = "scale(1)";
   });
-
+  console.log(window.CONFIG.button);
+  
   // Make the button draggable (vertically only)
   makeDraggable(button);
 
@@ -111,7 +138,7 @@ function createPanel() {
   // Chat interface HTML
   panel.innerHTML = `
   <div class="page-assistant-header">
-      <h3>Resume Enhancer</h3>
+      <h3>Application assitant</h3>
       <button id="page-assistant-close">×</button>
       </div>
     <div id="page-assistant-chat-container">
@@ -129,6 +156,7 @@ function createPanel() {
   document.getElementById("page-assistant-close").addEventListener("click", togglePanel);
   document.getElementById("page-assistant-send").addEventListener("click", handleUserMessage);
   const storedData = localStorage.getItem(STORAGE_KEY);
+  
   if (storedData) {
     loadMessagesFromLocal();
   }
@@ -262,11 +290,15 @@ async function out_the_first_data() {
 
   // Get AI response
   const aiResponse = await analyzePageContent("test", pageContent);
-  console.log("Raw AI Response:", aiResponse);
+  const length = Object.keys(aiResponse).length;
+  console.log("Raw AI Response:", aiResponse,length);
   // Remove loading and show respons
-  if (aiResponse.message === "This site does not contain job or internship information.") {
+  if (length<2) {
     console.log("No job or internship information found.");
     blockDiv();
+    loadingElement.remove();
+    addMessage(aiResponse.message, false);
+    return ;
   }
   loadingElement.remove();
   processJsonData(aiResponse);
@@ -308,7 +340,6 @@ async function handleUserMessage() {
 function init() {
   // Create the floating button
   createFloatingButton();
-
   // Inject CSS
   const style = document.createElement("style");
   style.textContent = `
@@ -433,7 +464,8 @@ function loadMessagesFromLocal() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(validMessages));
   }
   console.log(JSON.stringify(validMessages[0].content));
-  if (validMessages[0].content.trim() === "<strong>message:</strong></br> This site does not contain job or internship information.") {
+
+  if (validMessages.length<2 && (validMessages[0].content.trim() === "This site does not contain job or internship information." || validMessages[0].content.trim() === "<strong>message:</strong></br> This site does not contain job or internship information.")) {
     addMessage1(validMessages[0].content, validMessages[0].isUser);
     blockDiv();
     return;
@@ -451,6 +483,7 @@ chrome.runtime.onMessage.addListener((message) => {
     analyzeAndDisplayContent();
   }
 });
+
 
 // Log message to indicate content script has loaded
 chrome.runtime.sendMessage({ action: "log", data: "Content script loaded" });
@@ -471,3 +504,23 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === "updateSidebar") {
+    const { position, color } = message;
+
+    // Update the sidebar button position
+    const sidebarButton = document.getElementById("page-assistant-button");
+    if (sidebarButton) {
+      sidebarButton.style.position = "fixed";
+      sidebarButton.style.backgroundColor = color;
+
+      if (position === "left") {
+        sidebarButton.style.left = "20px";
+        sidebarButton.style.right = "";
+      } else {
+        sidebarButton.style.right = "20px";
+        sidebarButton.style.left = "";
+      }
+    }
+  }
+});

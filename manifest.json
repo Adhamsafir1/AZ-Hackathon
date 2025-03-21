@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Page Assistant",
+  "name": "Application assitant",
   "version": "1.0",
   "description": "A floating button that opens a chat panel to query the page content with AI",
   "permissions": [
